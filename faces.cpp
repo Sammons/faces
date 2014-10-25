@@ -1,10 +1,7 @@
 #include <vector>
 #include <string>
 
-#include <opencv2/opencv.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/objdetect/objdetect.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include "CommonHeaders.hpp"
 
 #include "helpers/ImageCollection.hpp"
 #include "helpers/SimpleDisplay.hpp"
@@ -13,9 +10,11 @@
 int main(int argc, char const *argv[])
 {
 
-  ImageCollection Images = ImageCollection();
+  ImageCollection        Images = ImageCollection();
   std::vector< cv::Mat > images = Images.readImages();
-  SimpleDisplay::renderImage(images[1]);
+
+  std::cout << "cols:" << images[0].cols << std::endl;
+  std::cout << "rows:" << images[0].rows << std::endl;
   /* code */
   return 0;
 }
