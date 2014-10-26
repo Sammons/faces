@@ -8,9 +8,10 @@ class ImageCollection
 public:
   ImageCollection(){};
   ~ImageCollection(){};
-  std::vector<cv::Mat>readImages( );
+  bool nextImage(cv::Mat& imageResult);
+  bool readImageAtIndex(cv::Mat& imageResult, int index);
+  std::vector< std::string > imageList();
 private:
-  std::vector<std::string>allImages( );
-  std::vector<cv::Mat>readImages( std::vector<std::string> imagePathListing ); 
+  int currentImageIndex = 0;
 };
 #endif
