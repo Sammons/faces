@@ -8,8 +8,8 @@ class ImageCollection
 public:
   ImageCollection(){};
   ~ImageCollection(){};
-  bool nextImage(cv::Mat& imageResult);
-  bool readImageAtIndex(cv::Mat& imageResult, int index);
+  cv::Mat nextImage ( cv::Size );
+  cv::Mat readImageAtIndex(int index, cv::Size );
   std::vector< std::string > imageList();
 private:
   int currentImageIndex = 0;
