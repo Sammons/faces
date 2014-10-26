@@ -2,31 +2,27 @@
 #define IMAGES_DEFINITION
 #include "ImageCollection.hpp"
 
-cv::Mat ImageCollection::nextImage( cv::Size size ) {
+bool ImageCollection::nextImage(cv::Mat& imageResult) {
   if (this->currentImageIndex < this->imageList().size() ) {
-    cv::Mat m = cv::imread( 
+    imageResult = cv::imread( 
       this->imageList()[ this->currentImageIndex ]
        );
-    cv::Mat scaledM;
-    cv::resize( m,  scaledM, size );
-    return scaledM;
+    return true;
   }
   else {
-    throw "no more images!";
+    return false;
   }
 }
 
-cv::Mat ImageCollection::readImageAtIndex( int index, cv::Size size ) {
+bool ImageCollection::readImageAtIndex(cv::Mat& imageResult, int index) {
   if ( index < 0 || index >= this->imageList().size() ) {
-    throw "index out of bounds of image collection";
+    return false;
   }
   else {
-    cv::Mat m = cv::imread( 
-      this->imageList()[ this->currentImageIndex ]
+    imageResult = cv::imread( 
+      this->imageList()[ index ]
        );
-    cv::Mat scaledM;
-    cv::resize( m,  scaledM, size );
-    return scaledM;
+    return true;
   }
 }
 
@@ -35,7 +31,7 @@ cv::Mat ImageCollection::readImageAtIndex( int index, cv::Size size ) {
 std::vector< std::string > ImageCollection::imageList() {
   std::string BASEPATH = "/home/catalyst/Desktop/faces/croppedfaces/";
   std::vector< std::string > images = { 
-BASEPATH + "yaleB01_P00A+000E+00.pgm",
+    BASEPATH + "yaleB01_P00A+000E+00.pgm",
 BASEPATH + "yaleB01_P00A+000E-20.pgm",
 BASEPATH + "yaleB01_P00A+000E+20.pgm",
 BASEPATH + "yaleB01_P00A+000E-35.pgm",
