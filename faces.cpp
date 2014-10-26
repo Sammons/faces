@@ -22,9 +22,9 @@ int main(int argc, char const *argv[])
   std::cout << "images:" << Images.imageList().size() << std::endl;
   std::cout << std::endl;
 
-  cv::Mat matrixWhereEveryColumnIsAnImage(
+  // cv::Mat matrixWhereEveryColumnIsAnImage(
     
-    );  
+  //   );  
 
   return 0;
 }
