@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 /*
  * Copyright (c) 2011. Philipp Wagner <bytefish[at]gmx[dot]de>.
  * Released to public domain under terms of the BSD Simplified license.
@@ -176,35 +175,6 @@ int main(int argc, const char *argv[]) {
             imwrite(format("%s/eigenface_%d.png", output_folder.c_str(), i), norm_0_255(cgrayscale));
         }
     }
-=======
-#include <vector>
-#include <string>
-
-#include "CommonHeaders.hpp"
-
-#include "helpers/ImageCollection.hpp"
-#include "helpers/SimpleDisplay.hpp"
-
-
-void copyImageToCol(cv::Mat& destinationMatrix, int col, cv::Mat image) {
-
-}
-
-int main(int argc, char const *argv[])
-{
-
-  ImageCollection Images = ImageCollection();
-  cv::Mat tmp_mat;
-  Images.nextImage(tmp_mat);
-
-  std::cout << "pixels:" << tmp_mat.cols*tmp_mat.rows << std::endl;
-  std::cout << "images:" << Images.imageList().size() << std::endl;
-  std::cout << std::endl;
-
-  // cv::Mat matrixWhereEveryColumnIsAnImage(
-    
-  //   );  
->>>>>>> parent of 300c4af... trying to figure out what to do with SVD
 
     // Display or save the image reconstruction at some predefined steps:
     for(int num_components = min(W.cols, 10); num_components < min(W.cols, 300); num_components+=15) {
