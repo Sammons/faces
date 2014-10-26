@@ -204,6 +204,7 @@ int main(int argc, char const *argv[])
   // cv::Mat matrixWhereEveryColumnIsAnImage(
     
   //   );  
+<<<<<<< HEAD
 >>>>>>> parent of 300c4af... trying to figure out what to do with SVD
 
     // Display or save the image reconstruction at some predefined steps:
@@ -226,4 +227,8 @@ int main(int argc, char const *argv[])
         waitKey(0);
     }
     return 0;
+=======
+
+  return 0;
+>>>>>>> parent of 300c4af... trying to figure out what to do with SVD
 }
