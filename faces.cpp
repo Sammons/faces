@@ -1,124 +1,199 @@
-#include <vector>
-#include <string>
+/*
+ * Copyright (c) 2011. Philipp Wagner <bytefish[at]gmx[dot]de>.
+ * Released to public domain under terms of the BSD Simplified license.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in the
+ *     documentation and/or other materials provided with the distribution.
+ *   * Neither the name of the organization nor the names of its contributors
+ *     may be used to endorse or promote products derived from this software
+ *     without specific prior written permission.
+ *
+ *   See <http://www.opensource.org/licenses/bsd-license>
+ */
 
-#include "CommonHeaders.hpp"
+#include "opencv2/core/core.hpp"
+#include "opencv2/contrib/contrib.hpp"
+#include "opencv2/highgui/highgui.hpp"
 
-#include "helpers/ImageCollection.hpp"
-#include "helpers/SimpleDisplay.hpp"
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
-/* assumes destination has space */
-/* rocks everything into being a float */
-void copyImageToCol(cv::Mat& destinationMatrix, int col, cv::Mat image) {
-  int rowOfDestCol = 0;
-  image = image.reshape(0,1); // convert to vector
-  for (int i = 0; i < image.cols; i ++) {
-      destinationMatrix.at<float>(col, rowOfDestCol) 
-          = (float)image.at<unsigned char>(i);
-      rowOfDestCol++;
-  }
+using namespace cv;
+using namespace std;
+
+static Mat norm_0_255(InputArray _src) {
+    Mat src = _src.getMat();
+    // Create and return normalized image:
+    Mat dst;
+    switch(src.channels()) {
+    case 1:
+        cv::normalize(_src, dst, 0, 255, NORM_MINMAX, CV_8UC1);
+        break;
+    case 3:
+        cv::normalize(_src, dst, 0, 255, NORM_MINMAX, CV_8UC3);
+        break;
+    default:
+        src.copyTo(dst);
+        break;
+    }
+    return dst;
 }
 
-void subtractAverageVectorFromEveryColumnOfMatrix(cv::Mat& Matrix, cv::Mat avg ) {
-  for (int row = 0; row < Matrix.rows; ++row) {
-    for (int col = 0; col < Matrix.cols; ++col) {
-      Matrix.at<float>(col, row) -= avg.at<float>(1, row);
+static void read_csv(const string& filename, vector<Mat>& images, vector<int>& labels, char separator = ';') {
+    std::ifstream file(filename.c_str(), ifstream::in);
+    if (!file) {
+        string error_message = "No valid input file was given, please check the given filename.";
+        CV_Error(CV_StsBadArg, error_message);
     }
-  }
+    string line, path, classlabel;
+    while (getline(file, line)) {
+        stringstream liness(line);
+        getline(liness, path, separator);
+        getline(liness, classlabel);
+        if(!path.empty() && !classlabel.empty()) {
+            cv::Mat readImage = imread(path, 0);
+            cv::Mat scaledMat;
+            Size size = Size(36,36);
+            cv::resize(readImage, scaledMat, size);
+            images.push_back(scaledMat);
+            labels.push_back(atoi(classlabel.c_str()));
+        }
+    }
 }
 
-
-void averageMatrixWhereColumsAreImagesInto1xNVector
-  (cv::Mat& matrixWhereEveryColumnIsAnImage, cv::Mat& avg ) {
-    for (int row = 0; row < matrixWhereEveryColumnIsAnImage.rows; ++row) {
-      for (int column = 0; column < matrixWhereEveryColumnIsAnImage.cols; ++column) {
-        avg.at<float>(0, row) += 
-          matrixWhereEveryColumnIsAnImage.at<float>(column, row);
-      }
-      avg.at<float>(0, row) /= matrixWhereEveryColumnIsAnImage.cols;
+int main(int argc, const char *argv[]) {
+    // Check for valid command line arguments, print usage
+    // if no arguments were given.
+    if (argc < 2) {
+        cout << "usage: " << argv[0] << " <csv.ext> <output_folder> " << endl;
+        exit(1);
     }
-  }
-
-int main(int argc, char const *argv[])
-{
-
-  ImageCollection Images = ImageCollection();
-  cv::Mat tmp_mat;
-  cv::Size imageSize(32,32); 
-  tmp_mat = Images.nextImage(imageSize);
-  std::cout << "pixels:" << tmp_mat.cols*tmp_mat.rows << std::endl;
-  std::cout << "images:" << Images.imageList().size() << std::endl;
-  std::cout << std::endl;
-
-  int numImagesToUse = 100; // there are like a redic amount of images
-  cv::Mat matrixWhereEveryColumnIsAnImage = cv::Mat(
-    tmp_mat.cols*tmp_mat.rows,
-    numImagesToUse,
-    cv::DataType<float>::type,
-    (float)0
-    );
-
-  cv::Mat avg = cv::Mat(
-    tmp_mat.cols*tmp_mat.rows,
-    1,
-    cv::DataType<float>::type,
-    (float)0
-    );
-  /* reading an arbitrary number of images into a matrix, where 
-  each column is an image */
-  for (int i = 0; i < numImagesToUse; i++) {
-      tmp_mat = Images.readImageAtIndex( i , imageSize );// skip around, get better sampling
-      copyImageToCol(matrixWhereEveryColumnIsAnImage,
-        i, 
-        tmp_mat);
-  }
-
-
-  /* calculate average */
-  averageMatrixWhereColumsAreImagesInto1xNVector( 
-    matrixWhereEveryColumnIsAnImage,
-    avg);
-
-  /* subtract off average */
-  subtractAverageVectorFromEveryColumnOfMatrix(
-    matrixWhereEveryColumnIsAnImage,
-    avg);
-
-  cv::Mat transpose = matrixWhereEveryColumnIsAnImage.clone().t();
-  std::cout << transpose.cols << "," << transpose.rows << std::endl;
-  std::cout << matrixWhereEveryColumnIsAnImage.cols << "," << matrixWhereEveryColumnIsAnImage.rows << std::endl;
-  
-  /* calculate covariance matrix */
-  /* note this is fat */
-  cv::Mat covarianceMat = 
-    matrixWhereEveryColumnIsAnImage * transpose;
-
-  std::cout << "calculating svd" << std::endl;
-  cv::SVD svd(covarianceMat);// u (use u?)vt w
-
-  std::cout << "u cols:" << svd.u.cols << ", rows" << svd.u.rows << std::endl;
-  double min = 0.0f, max =0.0f;
-  cv::minMaxLoc(svd.vt, &min, &max);
-  double difference = max - min;
-
-  std::cout << "u min:" << min << ", max:" << max << std::endl;
-
-  /* normalize to 0 - 255 */
-  for (int i = 0; i < svd.vt.cols; i++ ) {
-    for( int j = 0; j < svd.vt.rows; ++j) {
-      svd.vt.at<float>(i,j) = (255.0)*(svd.vt.at<float>(i,j) - min)/(max-min);
+    string output_folder = ".";
+    if (argc == 3) {
+        output_folder = string(argv[2]);
     }
-  }
-   SimpleDisplay::renderImage(svd.vt);
-  /* calculate weights for a face */
+    // Get the path to your CSV.
+    string fn_csv = string(argv[1]);
+    // These vectors hold the images and corresponding labels.
+    vector<Mat> images;
+    vector<int> labels;
+    // Read in the data. This can fail if no valid
+    // input filename is given.
+    try {
+        read_csv(fn_csv, images, labels);
+    } catch (cv::Exception& e) {
+        cerr << "Error opening file \"" << fn_csv << "\". Reason: " << e.msg << endl;
+        // nothing more we can do
+        exit(1);
+    }
+    // Quit if there are not enough images for this demo.
+    if(images.size() <= 1) {
+        string error_message = "This demo needs at least 2 images to work. Please add more images to your data set!";
+        CV_Error(CV_StsError, error_message);
+    }
+    // Get the height from the first image. We'll need this
+    // later in code to reshape the images to their original
+    // size:
+    int height = images[0].rows;
+    // The following lines simply get the last images from
+    // your dataset and remove it from the vector. This is
+    // done, so that the training data (which we learn the
+    // cv::FaceRecognizer on) and the test data we test
+    // the model with, do not overlap.
+    Mat testSample = images[images.size() - 1];
+    int testLabel = labels[labels.size() - 1];
+    images.pop_back();
+    labels.pop_back();
+    // The following lines create an Eigenfaces model for
+    // face recognition and train it with the images and
+    // labels read from the given CSV file.
+    // This here is a full PCA, if you just want to keep
+    // 10 principal components (read Eigenfaces), then call
+    // the factory method like this:
+    //
+    //      cv::createEigenFaceRecognizer(10);
+    //
+    // If you want to create a FaceRecognizer with a
+    // confidence threshold (e.g. 123.0), call it with:
+    //
+    //      cv::createEigenFaceRecognizer(10, 123.0);
+    //
+    // If you want to use _all_ Eigenfaces and have a threshold,
+    // then call the method like this:
+    //
+    //      cv::createEigenFaceRecognizer(0, 123.0);
+    //
+    Ptr<FaceRecognizer> model = createEigenFaceRecognizer();
+    std::cout << "training" << std::endl;
+    model->train(images, labels);
+    std::cout << "done training" << std::endl;
+    // The following line predicts the label of a given
+    // test image:
+    int predictedLabel = model->predict(testSample);
+    //
+    // To get the confidence of a prediction call the model with:
+    //
+    //      int predictedLabel = -1;
+    //      double confidence = 0.0;
+    //      model->predict(testSample, predictedLabel, confidence);
+    //
+    string result_message = format("Predicted class = %d / Actual class = %d.", predictedLabel, testLabel);
+    cout << result_message << endl;
+    // Here is how to get the eigenvalues of this Eigenfaces model:
+    Mat eigenvalues = model->getMat("eigenvalues");
+    // And we can do the same to display the Eigenvectors (read Eigenfaces):
+    Mat W = model->getMat("eigenvectors");
+    // Get the sample mean from the training data
+    Mat mean = model->getMat("mean");
+    // Display or save:
+    if(argc == 2) {
+        imshow("mean", norm_0_255(mean.reshape(1, images[0].rows)));
+    } else {
+        imwrite(format("%s/mean.png", output_folder.c_str()), norm_0_255(mean.reshape(1, images[0].rows)));
+    }
+    // Display or save the Eigenfaces:
+    for (int i = 0; i < min(10, W.cols); i++) {
+        string msg = format("Eigenvalue #%d = %.5f", i, eigenvalues.at<double>(i));
+        cout << msg << endl;
+        // get eigenvector #i
+        Mat ev = W.col(i).clone();
+        // Reshape to original size & normalize to [0...255] for imshow.
+        Mat grayscale = norm_0_255(ev.reshape(1, height));
+        // Show the image & apply a Jet colormap for better sensing.
+        Mat cgrayscale;
+        applyColorMap(grayscale, cgrayscale, COLORMAP_JET);
+        // Display or save:
+        if(argc == 2) {
+            imshow(format("eigenface_%d", i), cgrayscale);
+        } else {
+            imwrite(format("%s/eigenface_%d.png", output_folder.c_str(), i), norm_0_255(cgrayscale));
+        }
+    }
 
-
-  /* print logic */
-  // for (int j = 0; j < matrixWhereEveryColumnIsAnImage.rows; j++) {
-  //     std::cout << 
-  //       avg.at<float>(1,j);
-  //   std::cout << ";" << std::endl;
-  // }
-
-
-  return 0;
+    // Display or save the image reconstruction at some predefined steps:
+    for(int num_components = min(W.cols, 10); num_components < min(W.cols, 300); num_components+=15) {
+        // slice the eigenvectors from the model
+        Mat evs = Mat(W, Range::all(), Range(0, num_components));
+        Mat projection = subspaceProject(evs, mean, images[0].reshape(1,1));
+        Mat reconstruction = subspaceReconstruct(evs, mean, projection);
+        // Normalize the result:
+        reconstruction = norm_0_255(reconstruction.reshape(1, images[0].rows));
+        // Display or save:
+        if(argc == 2) {
+            imshow(format("eigenface_reconstruction_%d", num_components), reconstruction);
+        } else {
+            imwrite(format("%s/eigenface_reconstruction_%d.png", output_folder.c_str(), num_components), reconstruction);
+        }
+    }
+    // Display if we are not writing to an output folder:
+    if(argc == 2) {
+        waitKey(0);
+    }
+    return 0;
 }
