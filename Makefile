@@ -23,10 +23,10 @@ LFLAGS =
 # define any libraries to link into executable:
 #   if I want to link in libraries (libx.so or libx.a) I use the -llibname 
 #   option, something like (this will link in libmylib.so and libm.so:
-LIBS = `pkg-config --libs opencv`
+LIBS =  -lboost_system -lboost_filesystem `pkg-config --libs opencv` 
 
 # define the C source files
-SRCS = faces.cpp helpers/ImageCollection.cpp helpers/SimpleDisplay.cpp
+SRCS = face.cpp
 
 # define the C object files 
 #
@@ -60,7 +60,7 @@ $(MAIN): $(OBJS)
 # the rule(a .c file) and $@: the name of the target of the rule (a .o file) 
 # (see the gnu make manual section about automatic variables)
 .cpp.o:
-	$(CC) $(CFLAGS) $(INCLUDES) -c $<  -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) -c $<  -o $@ 
 
 clean:
 	$(RM) *.o *~ $(MAIN)
