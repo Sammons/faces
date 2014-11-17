@@ -61,6 +61,7 @@ cv::Mat face::applyToImage( cv::Mat inputImage )
   /* scale the input image to the eigenvector dims */
   cv::resize( inputImage, scaledInputImage, this->enforcedSize );
   
+  cv::namedWindow("disp", cv::WINDOW_AUTOSIZE);
   for (int i = 0; i < this->eigenvectors.cols; ++i) {
 
     cv::Mat ev = this->eigenvectors.col(i).clone();
@@ -68,9 +69,9 @@ cv::Mat face::applyToImage( cv::Mat inputImage )
     cv::Mat grayscale = norm_0_255(ev.reshape(1, this->enforcedSize.height));
     // Show the image & apply a Jet colormap for better sensing.
     cv::Mat cgrayscale;
-    cv::applyColorMap(grayscale, cgrayscale, cv::COLORMAP_JET);
+    //cv::applyColorMap(grayscale, cgrayscale, cv::COLORMAP_JET);
     // Display or save:
-    imshow(cv::format("eigenface_%d", i), cgrayscale);
+    cv::imshow("disp",grayscale);
     // cv::Mat curEigenVect1d = this->eigenvectors.col(i);
     // cv::Mat curEigenVect1dAsInts;
     // cv::Mat curEigenVect;
@@ -92,6 +93,8 @@ cv::Mat face::applyToImage( cv::Mat inputImage )
     // // std::cout << std::endl << scaledInputImageAsFloats.type() << " " << scaledInputImageAsFloats.size();
     // // std::cout << std::endl << curEigenVect1d.type() << " " << curEigenVect1d.size();
     // results.at<float>( 1, i ) = ( scaledInputImageAsFloats.dot( curEigenVect1d.t() ) );
+
+    cv::waitKey(0);
   }
 
   //results = norm_0_255(results);
@@ -100,7 +103,6 @@ cv::Mat face::applyToImage( cv::Mat inputImage )
   // std::cout << "type:" << scaledInputImageAsFloats.type() << " " << curEigenVect.type() << std::endl;
   // std::cout << "size:" << scaledInputImageAsFloats.size() << " " << curEigenVect.size() << std::endl; 
   // std::cout << "dot:" << scaledInputImageAsFloats.dot( curEigenVect ) << std::endl;
-  cv::waitKey(0);
   return normalizedResult;
 }
 
@@ -174,13 +176,13 @@ int main(int argc, char const *argv[])
   /* this will test to see if two similar images get
   a low euclidian distance */
   cv::Mat weightsIm1 = eigenface.applyToImage( cv::imread("./croppedfaces/yaleB01_P00A+070E+45.pgm",0) );
-  cv::Mat weightsIm2 = eigenface.applyToImage( cv::imread("./croppedfaces/yaleB01_P00A+110E+40.pgm",0) );
-  std::cout << weightsIm1 << std::endl << weightsIm2;
-  std::cout << "norm is :" << cv::norm( weightsIm1, weightsIm2 ) << " for pictures of the same guy " << std::endl;
-  cv::Mat weightsIm3 = eigenface.applyToImage( cv::imread("./croppedfaces/yaleB01_P00A+070E+45.pgm",0) );
-  cv::Mat weightsIm4 = eigenface.applyToImage( cv::imread("./croppedfaces/yaleB02_P00A+110E+15.pgm",0) );
+  // cv::Mat weightsIm2 = eigenface.applyToImage( cv::imread("./croppedfaces/yaleB01_P00A+110E+40.pgm",0) );
+  // std::cout << weightsIm1 << std::endl << weightsIm2;
+  // std::cout << "norm is :" << cv::norm( weightsIm1, weightsIm2 ) << " for pictures of the same guy " << std::endl;
+  // cv::Mat weightsIm3 = eigenface.applyToImage( cv::imread("./croppedfaces/yaleB01_P00A+070E+45.pgm",0) );
+  // cv::Mat weightsIm4 = eigenface.applyToImage( cv::imread("./croppedfaces/yaleB02_P00A+110E+15.pgm",0) );
   
-  std::cout << "norm is :" << cv::norm( weightsIm3, weightsIm4 ) << " for pictures of diff people " << std::endl;
+  // std::cout << "norm is :" << cv::norm( weightsIm3, weightsIm4 ) << " for pictures of diff people " << std::endl;
 
   return 0;
 }

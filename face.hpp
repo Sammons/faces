@@ -27,5 +27,5 @@ std::vector< std::string > readFileNamesFromDirectory( std::string dirpath );
 };
 
 /* static initializers */
-const cv::Size face::enforcedSize = cv::Size(36,36);
-const int face::numberOfComponentsToUse = 5;
+const cv::Size face::enforcedSize = cv::Size(128,128);
+const int face::numberOfComponentsToUse = 20;
