@@ -32,7 +32,7 @@ void face::readEigenvectorsFromFile( std::string filepath )
 
 std::vector< std::string > face::readFileNamesFromDirectory( std::string dirpath )
 {
-
+return std::vector<std::string>();
 }
 void dumpMatProps(cv::Mat in) {
   std::cout << "type: " << in.type() << std::endl;
@@ -53,57 +53,28 @@ each eigenvector against the image */
 cv::Mat face::applyToImage( cv::Mat inputImage ) 
 {
 
-  //std::cout << "cols: " << this->eigenvectors.cols << std::endl;
-  cv::Mat scaledInputImage;
-  cv::Mat scaledInputImageAsFloats;
-  cv::Mat results;
-  results.create(this->eigenvectors.cols, 1, CV_64FC1 );/* nx1 vector */
-  /* scale the input image to the eigenvector dims */
-  cv::resize( inputImage, scaledInputImage, this->enforcedSize );
-  
-  cv::namedWindow("disp", cv::WINDOW_AUTOSIZE);
-  for (int i = 0; i < this->eigenvectors.cols; ++i) {
+  //printf(" cols : %d\nrows: %d\n", this->eigenvectors.cols, this->eigenvectors.rows);
+  cv::Mat results(
+    1,this->numberOfComponentsToUse, CV_64FC1),
+   image,
+   scaledInputImage,
+   mean;
+  std::vector<float> weights;
+  // std::cout << inputImage.rows << std::endl;
+  cv::resize( inputImage, image, this->enforcedSize );
+  mean = this->sampleMean.reshape( 1, image.rows );
+  image.convertTo( image, CV_64FC1 );
 
-    cv::Mat ev = this->eigenvectors.col(i).clone();
-    // Reshape to original size & normalize to [0...255] for imshow.
-    cv::Mat grayscale = norm_0_255(ev.reshape(1, this->enforcedSize.height));
-    // Show the image & apply a Jet colormap for better sensing.
-    cv::Mat cgrayscale;
-    //cv::applyColorMap(grayscale, cgrayscale, cv::COLORMAP_JET);
-    // Display or save:
-    cv::imshow("disp",grayscale);
-    // cv::Mat curEigenVect1d = this->eigenvectors.col(i);
-    // cv::Mat curEigenVect1dAsInts;
-    // cv::Mat curEigenVect;
-    // scaledInputImage = scaledInputImage.reshape(0, 1);
-    // scaledInputImage.convertTo( scaledInputImageAsFloats, CV_64FC1 );
+  image -= mean;
 
-    // // dumpMatProps( scaledInputImageAsFloats);
-    // // dumpMatProps( this->sampleMean);
-    // scaledInputImageAsFloats -= this->sampleMean;
-    // curEigenVect1dAsInts = norm_0_255(curEigenVect1d);
-    // curEigenVect1dAsInts.convertTo( curEigenVect1d, CV_64FC1 );
-
-    // // /* make sure the mats are the same dimensions */
-    // // copy1DMatInto2DFloat( 
-    // //  curEigenVect1d,
-    // //  curEigenVect,
-    // //  this->enforcedSize.width,
-    // //  this->enforcedSize.height );
-    // // std::cout << std::endl << scaledInputImageAsFloats.type() << " " << scaledInputImageAsFloats.size();
-    // // std::cout << std::endl << curEigenVect1d.type() << " " << curEigenVect1d.size();
-    // results.at<float>( 1, i ) = ( scaledInputImageAsFloats.dot( curEigenVect1d.t() ) );
-
-    cv::waitKey(0);
+  for (int i=0; i < this->eigenvectors.cols; i++) 
+  {
+    cv::Mat curCol;
+    this->eigenvectors.col(i).copyTo(curCol);
+    curCol = curCol.reshape(1, image.rows);
+    results.col(i) = curCol.dot(image);
   }
-
-  //results = norm_0_255(results);
-  cv::Mat normalizedResult;
-  //results.convertTo( normalizedResult, CV_64FC1 );
-  // std::cout << "type:" << scaledInputImageAsFloats.type() << " " << curEigenVect.type() << std::endl;
-  // std::cout << "size:" << scaledInputImageAsFloats.size() << " " << curEigenVect.size() << std::endl; 
-  // std::cout << "dot:" << scaledInputImageAsFloats.dot( curEigenVect ) << std::endl;
-  return normalizedResult;
+  return results;
 }
 
 /* note - assumes greyscale, will resize to match so
@@ -123,7 +94,7 @@ void face::constructEigenFaceFromGreyFaceImagesInDir(
   /* iterate over the files at the first level in the folder */
   fs::directory_iterator dirEndIter;/* I guess these are initialized to the end */
   for ( fs::directory_iterator directoryIter( collectionFullPath );
-        directoryIter != dirEndIter && inputImages.size() < 400;
+        directoryIter != dirEndIter && inputImages.size() < 100;
         ++directoryIter )
   {
     if ( fs::is_regular_file( directoryIter->status() ) ) 
@@ -143,6 +114,7 @@ void face::constructEigenFaceFromGreyFaceImagesInDir(
     }
   }
 
+  printf("number of images being processed: %zu\n", inputImages.size());
   if ( inputImages.size() < 1 ) {
     throw "The image path had no images";
   }
@@ -153,9 +125,10 @@ void face::constructEigenFaceFromGreyFaceImagesInDir(
     use the prediction capaibility of the model */
     );
 
+  printf("%s\n", "beginning heavy lifting");
   model->train( inputImages, labels );
-
-
+  printf("%s\n", "finished heavy lifting");
+  
   /* pull stats out of the model */
   this->eigenvalues  = model->getMat( "eigenvalues"  ).clone();
   this->eigenvectors = model->getMat( "eigenvectors" ).clone();
@@ -176,9 +149,9 @@ int main(int argc, char const *argv[])
   /* this will test to see if two similar images get
   a low euclidian distance */
   cv::Mat weightsIm1 = eigenface.applyToImage( cv::imread("./croppedfaces/yaleB01_P00A+070E+45.pgm",0) );
-  // cv::Mat weightsIm2 = eigenface.applyToImage( cv::imread("./croppedfaces/yaleB01_P00A+110E+40.pgm",0) );
-  // std::cout << weightsIm1 << std::endl << weightsIm2;
-  // std::cout << "norm is :" << cv::norm( weightsIm1, weightsIm2 ) << " for pictures of the same guy " << std::endl;
+  cv::Mat weightsIm2 = eigenface.applyToImage( cv::imread("./croppedfaces/yaleB01_P00A+110E+40.pgm",0) );
+  std::cout << weightsIm1 << std::endl << weightsIm2;
+  std::cout << "norm is :" << cv::norm( weightsIm1, weightsIm2 ) << " for pictures of the same guy " << std::endl;
   // cv::Mat weightsIm3 = eigenface.applyToImage( cv::imread("./croppedfaces/yaleB01_P00A+070E+45.pgm",0) );
   // cv::Mat weightsIm4 = eigenface.applyToImage( cv::imread("./croppedfaces/yaleB02_P00A+110E+15.pgm",0) );
   
