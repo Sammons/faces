@@ -6,7 +6,12 @@
 #include <opencv2/objdetect/objdetect.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include <boost/filesystem.hpp>
+
+
 #include <vector>
 #include <string>
+#include <map>
+#include <iterator>
 
 #endif

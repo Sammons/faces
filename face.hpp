@@ -1,14 +1,16 @@
+#pragma once
 class face
 {
 
 public:
 
-
+face();
 void serializeAndWriteEigenvectorsToFile( std::string filepath );
 void readEigenvectorsFromFile( std::string filepath );
-void constructEigenFaceFromGreyFaceImagesInDir( 
+void learnFromGreyFaceImagesInDir( 
   std::string collectionDir );
-cv::Mat applyToImage( cv::Mat );
+cv::Mat evaluateImage( cv::Mat );
+int getNumEigenVectors();
 
 private:
 
@@ -19,13 +21,9 @@ cv::Mat sampleMean;
 
 /* all images this object handles are forced to be
 this scale */
-static const cv::Size enforcedSize;
-static const int numberOfComponentsToUse;
+cv::Size enforcedSize;
+int numberOfComponentsToUse;
 
 std::vector< std::string > readFileNamesFromDirectory( std::string dirpath );
 
 };
-
-/* static initializers */
-const cv::Size face::enforcedSize = cv::Size(32,32);
-const int face::numberOfComponentsToUse = 2;
