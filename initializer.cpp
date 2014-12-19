@@ -24,8 +24,8 @@ namespace initialize {
     {
         return string(*(v8String(arg)));
     }
-    float32 getValueAsNumber(Local<Value> arg) {
-        return (localNum::Cast(arg))->NumberValue();
+    float getValueAsNumber(Local<Value> arg) {
+        return (Local<Number>::Cast(arg))->NumberValue();
     }
 
     /* three usages for initialize:
@@ -51,10 +51,44 @@ namespace initialize {
     given 4 arguments:
         uses the arguments directly to
         prep the model */
-    Handle<Value> initialize_eigenfaces(const Arguments& args)
+    Handle<Value> train(const Arguments& args)
     {
         HandleScope scope;
+        std::string imageCollectionDir;
+        int matWidth = 128;
+        int numComponents = 50;
+        int dataType = CV_64FC1;
+        if (args.Length() == 0)
+        {
+            unique_ptr<eigenface> localPtr(new eigenface(
+                matWidth,
+                numComponents,
+                dataType,
+                imageCollectionDir)
+            );
+            eigenfaces = std::move(localPtr);
+            initialized = true;
+        }
+        else if (args.Length() == 4)
+        {
+            matWidth = static_cast<int>(getValueAsNumber(args[0]));
+            numComponents = static_cast<int>(getValueAsNumber(args[1]));
+            dataType = static_cast<int>(getValueAsNumber(args[2]));
+            imageCollectionDir = static_cast<int>(getValueAsNumber(args[3]));
 
+            unique_ptr<eigenface> localPtr(new eigenface(
+                matWidth,
+                numComponents,
+                dataType,
+                imageCollectionDir)
+            );
+            eigenfaces = std::move(localPtr);
+            initialized = true;
+        }
+        else 
+        {
+            throw "not enough arguments!";
+        }
         return scope.Close(Undefined());
     }
 
@@ -66,16 +100,15 @@ namespace initialize {
         HandleScope scope; 
         try {
          
-            if (args.length < 1) {
+            if (args.Length() < 1) {
                 return scope.Close(Handle<Array>());
             }
             if (!initialized)
             {
                 unique_ptr<eigenface> localPtr(new eigenface(
-                    32,
-                    10,
+                    128,
+                    50,
                     CV_64FC1,
-                    "default_fast.mdl",
                     "./croppedfaces")
                 );
                 eigenfaces = std::move(localPtr);
@@ -102,7 +135,8 @@ namespace initialize {
     > arrayExportables = 
     // these are the Value functions which are exposed to the javascript
     {
-          {"evaluate"  , evaluate_image}
+          {"score"  , evaluate_image},
+          {"train"  , train}
     };
     
 

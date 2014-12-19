@@ -6,28 +6,14 @@ class eigenface
 public:
 
 eigenface(
-  int n,               /* images are scaled to nxn */
-  int numComponents,   /* how many eigenvectors */
-  int dataType,        /* type to use in math */
-  std::string loadPath /* where to load from*/
-  );
-
-eigenface(
   int n,                 /* images are scaled to nxn */
   int numComponents,     /* how many eigenvectors */
   int dataType,          /* type to use in math */
-  std::string savePath,  /* where to save state */
   std::string collection /* path to train from */
   );
 
-/* serialize and save eigenvectors */
-void save( std::string filepath );
-
-/* load up eigenvectors */
-void load( std::string filepath );
-
 /* train and produce new eigenvectors */
-void train( std::string imageCollectionDirectoryPath );
+void train( std::string imageCollectionDirectoryPath, int imageLimit = -1);
 
 /* note the image does not have to be greyscale,
  they are read in as greyscale. Size does not matter either
@@ -35,13 +21,6 @@ void train( std::string imageCollectionDirectoryPath );
 cv::Mat score( std::string imagePath );
 
 private:
-
-void initialize(  
-  int n,               /* images are scaled to nxn */
-  int numComponents,   /* how many eigenvectors */
-  int dataType,        /* type to use in math */
-  std::string loadPath /* where to load from*/
-  );
 
 cv::Mat eigenvectors;/* used to compute weights */
 

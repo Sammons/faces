@@ -4,53 +4,22 @@
 namespace fs = boost::filesystem;
 
 eigenface::eigenface(
-    int n,               /* images are scaled to nxn */
-    int numComponents,   /* how many eigenvectors */
-    int dataType,        /* type to use in math */
-    std::string loadPath /* where to load from*/
-    )
-{
-    /* configure */
-    initialize(n, numComponents, dataType, loadPath);
-
-    /* try to restore training */
-    this->attemptToReadEigenfaces();
-}
-
-eigenface::eigenface(
     int n,                 /* images are scaled to nxn */
     int numComponents,     /* how many eigenvectors */
     int dataType,          /* type to use in math */
-    std::string savePath,  /* where to save state */
     std::string collection /* path to train from */
     )
 {
     /* configure */
-    this->initialize(n, numComponents, dataType, loadPath);
+    this->trained = false;
+    this->numComponents = numComponents;
+    this->size = cv::Size(n,n);
+    this->dataType = dataType;
 
     /* train */
     this->train(collection);
 }
 
-void eigenface::initialize(  
-    int n,               /* images are scaled to nxn */
-    int numComponents,   /* how many eigenvectors */
-    int dataType,        /* type to use in math */
-    std::string loadPath) /* where to load from*/
-{
-    /* configuration */
-    this->trained = false;
-    this->numComponents = numComponents;
-    this->size = cv::Size(n,n);
-    this->dataType = dataType;
-    this->savePath = loadPath;
-}
-
-/* checks for save file, and attempts to read from it */
-void eigenface::attemptToReadEigenfaces()
-{
-
-}
 
 /* takes the image path, reads in the image as greyscale
 and resizes the image to match the this->size parameter.
@@ -109,7 +78,7 @@ from that model, along with the sampleMean for the collection,
 
 The labels are not really used, they are just there to satisfy
 the method signature for the opencv train method */
-void face::train(std::string imageCollectionDirectory) 
+void face::train(std::string imageCollectionDirectory, int imageLimit = -1) 
 {
     std::vector<cv::Mat> inputImages;
     std::vector<int> labels; /* will all be set to be 1 */
@@ -127,6 +96,9 @@ void face::train(std::string imageCollectionDirectory)
     fs::directory_iterator dirIter( collectionFullPath );
     for ( ;dirIter != fs::directory_iterator(); ++directoryIter )
     {
+        /* optional stop early, since the dir may have a lot of ims */
+        if (imageLimit > 0 && labels.size() > imageLimit) break;
+
         if ( fs::is_regular_file( directoryIter->status() ) ) 
         {
             /* read the images and scale them,
