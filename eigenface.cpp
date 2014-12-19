@@ -1,13 +1,12 @@
 #include "common.hpp"
-#include "face.hpp"
+#include "eigenface.hpp"
 
 namespace fs = boost::filesystem;
 
 eigenface::eigenface(
     int n,                 /* images are scaled to nxn */
     int numComponents,     /* how many eigenvectors */
-    int dataType,          /* type to use in math */
-    std::string collection /* path to train from */
+    int dataType          /* type to use in math */
     )
 {
     /* configure */
@@ -15,9 +14,6 @@ eigenface::eigenface(
     this->numComponents = numComponents;
     this->size = cv::Size(n,n);
     this->dataType = dataType;
-
-    /* train */
-    this->train(collection);
 }
 
 
@@ -29,13 +25,13 @@ image to produce a 1x(this->numComponents) matrix
 of weights, where the numComponents is the same
 as the number of eigenvectors, which is the same
 as the number of principle compontents used */
-cv::Mat face::score( std::string imagePath ) 
+cv::Mat eigenface::score( std::string imagePath ) 
 {
 
     cv::Mat
         image,
         mean,
-        inputImage = imread(imagePath, CV_LOAD_IMAGE_GRAYSCALE),
+        inputImage = cv::imread(imagePath, CV_LOAD_IMAGE_GRAYSCALE),
         results(1, this->numComponents, this->dataType);
 
     if (!this->trained)
@@ -78,7 +74,7 @@ from that model, along with the sampleMean for the collection,
 
 The labels are not really used, they are just there to satisfy
 the method signature for the opencv train method */
-void face::train(std::string imageCollectionDirectory, int imageLimit = -1) 
+void eigenface::train(std::string imageCollectionDirectory, int imageLimit) 
 {
     std::vector<cv::Mat> inputImages;
     std::vector<int> labels; /* will all be set to be 1 */
@@ -94,19 +90,19 @@ void face::train(std::string imageCollectionDirectory, int imageLimit = -1)
 
     /* iterate over the files at the first level in the folder */
     fs::directory_iterator dirIter( collectionFullPath );
-    for ( ;dirIter != fs::directory_iterator(); ++directoryIter )
+    for ( ;dirIter != fs::directory_iterator(); ++dirIter )
     {
         /* optional stop early, since the dir may have a lot of ims */
-        if (imageLimit > 0 && labels.size() > imageLimit) break;
+        if (imageLimit > 0 && labels.size() > static_cast<unsigned int>(imageLimit)) break;
 
-        if ( fs::is_regular_file( directoryIter->status() ) ) 
+        if ( fs::is_regular_file( dirIter->status() ) ) 
         {
             /* read the images and scale them,
             should support pgm, jpg, png etc.
             read the opencv docs about imread for
             best luck. It does depend on the libs
             available on the computer this is run on. */
-            cv::Mat currentImage = cv::imread( directoryIter->path().string(), 0 );
+            cv::Mat currentImage = cv::imread( dirIter->path().string(), 0 );
             cv::Mat scaledImage;
             cv::resize( currentImage, scaledImage, this->size );
             inputImages.push_back( scaledImage.clone() );

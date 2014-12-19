@@ -28,46 +28,25 @@ namespace initialize {
         return (Local<Number>::Cast(arg))->NumberValue();
     }
 
-    /* three usages for initialize:
-
-    given 1 argument: "fast" or "slow"
-        slow default values become:
-            128,
-            120,
-            CV_64FC1, <- this is the integer 6
-            "default_slow.mdl",
-            "./croppedfaces"
-        fast default values become:
-            32,
-            10,
-            CV_64FC1, <- this is the integer 6
-            "default_fast.mdl",
-            "./croppedfaces"
-
-    given 1 argument: "path_to_.mdl"
-        reads from a .mdl file to
-        restore state of model
-
-    given 4 arguments:
-        uses the arguments directly to
-        prep the model */
+    /* trains the model */
     Handle<Value> train(const Arguments& args)
     {
         HandleScope scope;
-        std::string imageCollectionDir;
-        int matWidth = 128;
-        int numComponents = 50;
+        std::string imageCollectionDir = "./croppedfaces";
+        int matWidth = 32;
+        int numComponents = 20;
         int dataType = CV_64FC1;
+        int imLimit = 100;
         if (args.Length() == 0)
         {
             unique_ptr<eigenface> localPtr(new eigenface(
                 matWidth,
                 numComponents,
-                dataType,
-                imageCollectionDir)
+                dataType)
             );
             eigenfaces = std::move(localPtr);
             initialized = true;
+
         }
         else if (args.Length() == 4)
         {
@@ -79,8 +58,7 @@ namespace initialize {
             unique_ptr<eigenface> localPtr(new eigenface(
                 matWidth,
                 numComponents,
-                dataType,
-                imageCollectionDir)
+                dataType)
             );
             eigenfaces = std::move(localPtr);
             initialized = true;
@@ -89,11 +67,12 @@ namespace initialize {
         {
             throw "not enough arguments!";
         }
+        eigenfaces->train(imageCollectionDir, imLimit);
         return scope.Close(Undefined());
     }
 
     /* if initialize has not been called,
-    then initializes with fast configuration.
+    then initializes with a relatively quick configuration.
     Then scores the image */
     Handle<Value> evaluate_image(const Arguments& args) 
     {
@@ -105,16 +84,9 @@ namespace initialize {
             }
             if (!initialized)
             {
-                unique_ptr<eigenface> localPtr(new eigenface(
-                    128,
-                    50,
-                    CV_64FC1,
-                    "./croppedfaces")
-                );
-                eigenfaces = std::move(localPtr);
-                initialized = true;
+                throw "not trained!";
             }
-            eigenfaces->train("./croppedfaces");
+            eigenfaces->train("./croppedfaces", -1);
             cv::Mat score = eigenfaces->score(getValueAsString(args[0]));
             Handle<Array> jsArray = Array::New(score.cols);
             for (int i = 0; i < score.cols; ++i) 

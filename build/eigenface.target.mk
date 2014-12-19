@@ -70,7 +70,7 @@ INCS_Release := \
 
 OBJS := \
 	$(obj).target/$(TARGET)/initializer.o \
-	$(obj).target/$(TARGET)/face.o
+	$(obj).target/$(TARGET)/eigenface.o
 
 # Add to the list of files we specially track dependencies for.
 all_deps += $(OBJS)

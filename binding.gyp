@@ -6,7 +6,7 @@
 			"sources":
 			[
         "initializer.cpp",
-				"face.cpp"
+				"eigenface.cpp"
 			],
       "include_dirs": 
       [

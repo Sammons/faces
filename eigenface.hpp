@@ -8,12 +8,11 @@ public:
 eigenface(
   int n,                 /* images are scaled to nxn */
   int numComponents,     /* how many eigenvectors */
-  int dataType,          /* type to use in math */
-  std::string collection /* path to train from */
+  int dataType          /* type to use in math */
   );
 
 /* train and produce new eigenvectors */
-void train( std::string imageCollectionDirectoryPath, int imageLimit = -1);
+void train( std::string imageCollectionDirectoryPath, int imageLimit);
 
 /* note the image does not have to be greyscale,
  they are read in as greyscale. Size does not matter either
@@ -37,10 +36,6 @@ cv::Size size;
 when scoring an image, this is the same as
 the number of eigenvectors */
 int numComponents;
-
-/* whenever train is called, it serializes the
-eigenvectors to a file; this is where it puts them */
-std::string savePath;
 
 /* cv type to work with when doing math */
 int dataType;
