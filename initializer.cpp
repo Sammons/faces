@@ -87,13 +87,18 @@ namespace initialize {
                 throw "not trained!";
             }
             eigenfaces->train("./croppedfaces", -1);
-            cv::Mat score = eigenfaces->score(getValueAsString(args[0]));
-            Handle<Array> jsArray = Array::New(score.cols);
-            for (int i = 0; i < score.cols; ++i) 
-            {
-              jsArray->Set(i, Number::New(score.at<double>(0,i)));
-            }
-            return scope.Close(jsArray);
+            cv::Mat scoreo = eigenfaces->score("./Other.pgm");
+            cv::Mat scoreb1 = eigenfaces->score("./Ben1.png");
+            cv::Mat scoreb2 = eigenfaces->score("./Ben2.png");
+            cout << cv::norm(scoreo, scoreb1) << endl;
+            cout << cv::norm(scoreo, scoreb2) << endl;
+            cout << cv::norm(scoreb1, scoreb2) << endl;
+            // Handle<Array> jsArray = Array::New(score.cols);
+            // for (int i = 0; i < score.cols; ++i) 
+            // {
+            //   jsArray->Set(i, Number::New(score.at<double>(0,i)));
+            // }
+            //return scope.Close(jsArray);
         } 
         catch (...) 
         {
@@ -111,7 +116,6 @@ namespace initialize {
           {"train"  , train}
     };
     
-
     void ExportValueFunction(
       Handle<Object> exports
     , Handle<Value> (*func)(const Arguments& args)
